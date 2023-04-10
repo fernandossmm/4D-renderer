@@ -10,9 +10,11 @@ precision mediump float;
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
-uniform float[] object;
+// uniform float[] object;
 uniform vec4 camera_position;
 uniform vec4 camera_rotation;
+uniform vec3 camera_angles_one;
+uniform vec3 camera_angles_two;
 
 // Utils
 float maxcomp4 (in vec4 v) {  // Maximum of the components
@@ -101,7 +103,7 @@ Shape parallelotopeFactory(in vec4 color, in vec4 c, in vec4 len, float[6] rotat
   return shapeFactory(PARALLELOTOPE, color, c, 0.0, len, rotation, 0, 0);
 }
 
-Shape shapes[5];
+Shape shapes[8];
 
 void loadShapes() {
   shapes[0] = ballFactory(vec4(1.0,0.0,0.0,0.0), vec4(-10.0,0.0,0.0,0.0), 1.0);
@@ -114,9 +116,24 @@ void loadShapes() {
                 float[](0.0,0.0,0.0,0.0,1.0,0.0));
 }
 
-float distanceFromShape(in vec4 position, in Shape shape) {
-  // Proposal to solve this: While loop and a limited-length heap (maybe 128?) - Really non-performant
+float distanceFromShape(in vec4 position, in int shapeIndex) {
+  // Proposal to solve this: While loop and a limited-length stack (maybe 128?) - Really non-performant
+  /* Depth-first traversal
+      -  
+  */
+  int[4] callStack;
+  float[8] returnMap;
+  int stackIndex = 0;
+  int currentShapeIndex = shapeIndex;
   
+  callStack[stackIndex] = shapeIndex;
+  stackIndex++;
+  
+  while(stackIndex > 0) {
+    stackIndex--;
+    currentShapeIndex = callStack[stackIndex];
+    Shape shape = shapes[currentShapeIndex];
+    
     switch(shape.type) {
       case BALL:
         return length(position) - shape.r;
@@ -133,16 +150,28 @@ float distanceFromShape(in vec4 position, in Shape shape) {
         
         return length(max(dist,0.0)) + m;
       
-      case INTERSECTION:
-        // TODO: GLSL does not support recursion, wtf
-        // return max(distanceFromShape(position, shapes[shape.operand1]), distanceFromShape(position, shapes[shape.operand2]));
-        
-      case UNION:
-      case DIFFERENCE:
+      // case INTERSECTION:
+      //   // TODO: GLSL does not support recursion, wtf
+      //   // return max(distanceFromShape(position, shapes[shape.operand1]), distanceFromShape(position, shapes[shape.operand2]));
+      //   if(returnMap[currentShapeIndex] == 0.0) {
+      //     callStack[stackIndex] = shapeIndex;
+      //     stackIndex++;
+      //     callStack[stackIndex] = shape.operand1;
+      //     stackIndex++;
+      //     callStack[stackIndex] = shape.operand2;
+      //     stackIndex++;
+      //   }
+      //   else {
+      //     returnMap[currentShapeIndex] = max(returnMap[shape.operand1], returnMap[shape.operand2]);
+      //   }
+      //   break;
+      // case UNION:
+      // case DIFFERENCE:
     }
+  }
   
+  return returnMap[currentShapeIndex];
   
-  return heap[0];
 }
 
 vec4 closest_color(in vec4 p)
@@ -153,7 +182,7 @@ vec4 closest_color(in vec4 p)
   
   for(int i = 0; i<shapes.length(); i++) {
     
-    dist = distanceFromShape(p, shapes[i]);
+    dist = distanceFromShape(p, i);
     
     if(dist < minDist) {
       minDist = dist;
@@ -171,7 +200,7 @@ float map_the_world(in vec4 p)
   float minDist = 1.0 / 0.0; // Infinity
   
   for(int i = 0; i<shapes.length(); i++) {
-    minDist = min(minDist, distanceFromShape(p, shapes[i]));
+    minDist = min(minDist, distanceFromShape(p, i));
   }
   
   return minDist;
@@ -235,11 +264,15 @@ void main()
     
     vec2 uv = (gl_FragCoord.xy / u_resolution * 2.0 - 1.0) * vec2(u_resolution.x/u_resolution.y, 1.0) * fov/180.0;
     
-    vec4 ta = camera_rotation;
+    // vec4 ta = camera_rotation;
 
-    vec4 ro = camera_position;
+    vec4 rayOrigin = camera_position;
+
+    vec4 ray = vec4(0.0, 0.0, 1.0, 0.0);
     
-    vec4 rd = rotate(ta, 0.0, 0.0, 0.0, uv.y, uv.x, 0.0);
+    // TODO: actually rotate rays in the correct way depending on camera rotation
+    vec4 rayDirection = rotate(ray, 0.0, 0.0, 0.0, uv.y, uv.x, 0.0);
+    rayDirection = rotate(rayDirection, camera_angles_one[0], camera_angles_one[1], camera_angles_one[2], camera_angles_two[0], camera_angles_two[1], camera_angles_two[2]);
     
     loadShapes();
     
@@ -247,7 +280,7 @@ void main()
       gl_FragColor = vec4(0.6);
     }
     else {
-      vec3 shaded_color = ray_march(ro, rd);
+      vec3 shaded_color = ray_march(rayOrigin, rayDirection);
 
       gl_FragColor = vec4(shaded_color, 1.0);
     }

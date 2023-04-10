@@ -5,10 +5,13 @@ final float ROTATION_SPEED = 0.025;
 public class Camera {
   private Vec4 position;
   private Vec4 rotation;
+  private float[] angles;
   
   Camera(Vec4 position, Vec4 rotation) {
     this.position = position;
     this.rotation = rotation;
+
+    angles = new float[6];
   }
   
   Camera(Vec4 position) {
@@ -21,6 +24,7 @@ public class Camera {
   
   void resetRotation() {
     rotation = new Vec4(0.0, 0.0, 1.0, 0.0);
+    angles = new float[6];
   }
   
   void rotate(float[] rotDelta) {
@@ -28,12 +32,18 @@ public class Camera {
   }
   
   void rotate(float zwRot, float ywRot, float xwRot, float yzRot, float xzRot, float xyRot) {
-    
+    this.angles[0] += zwRot;
+    this.angles[1] += ywRot;
+    this.angles[2] += xwRot;
+    this.angles[3] += yzRot;
+    this.angles[4] += xzRot;
+    this.angles[5] += xyRot;
+
     this.rotation = rotateVector(rotation, zwRot, ywRot, xwRot, yzRot, xzRot, xyRot);
   }
   
   private Vec4 rotateVector(Vec4 v, float zwRot, float ywRot, float xwRot, float yzRot, float xzRot, float xyRot) {
-        
+    
     float[][] zwRotationMatrix = {{          1,          0,          0,          0},
                                   {          0,          1,          0,          0},
                                   {          0,          0, cos(zwRot),-sin(zwRot)},
@@ -82,25 +92,29 @@ public class Camera {
   }
   
   void move(String axis, float step) {
+    Vec4 movement = new Vec4(step, 0.0, 0.0, 0.0);
+
     switch(axis) {
       case "x":
-        position = position.add(rotateVector(rotation.mul(step), 0, 0, 0, 0, (float) Math.PI/2, 0)); break;
+        movement = new Vec4(step, 0.0, 0.0, 0.0);  break;
       case "-x":
-        position = position.add(rotateVector(rotation.mul(step), 0, 0, 0, 0, (float)-Math.PI/2, 0)); break;
+        movement = new Vec4(-step, 0.0, 0.0, 0.0); break;
       case "y":
-        position = position.add(rotateVector(rotation.mul(step), 0, 0, 0, (float) Math.PI/2, 0, 0)); break;
+        movement = new Vec4(0.0, step, 0.0, 0.0); break;
       case "-y":
-        position = position.add(rotateVector(rotation.mul(step), 0, 0, 0, (float)-Math.PI/2, 0, 0)); break;
+        movement = new Vec4(0.0, -step, 0.0, 0.0); break;
       case "z":
-        position = position.add(rotation.mul(step)); break; // Forward and backward don't need rotation
+        movement = new Vec4(0.0, 0.0, step, 0.0); break;
       case "-z":
-        position = position.add(rotation.mul(-step)); break;
+        movement = new Vec4(0.0, 0.0, -step, 0.0); break;
       case "w":
         position.w += step; break;  // Absolute movement (not related to orientation) in 4th dimension.
                                     // Anything else is way too difficult to control.
       case "-w":
         position.w -= step; break;
     }
+
+    position = position.add(rotateVector(movement, this.angles[0], this.angles[1], this.angles[2], this.angles[3], this.angles[4], this.angles[5]));
   }
   
   Vec4 getPosition() {
@@ -109,5 +123,9 @@ public class Camera {
   
   Vec4 getRotation() {
     return this.rotation;
+  }
+  
+  float[] getAngles() {
+    return this.angles;
   }
 }

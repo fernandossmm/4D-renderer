@@ -4,3 +4,9 @@ https://www.youtube.com/watch?v=62-pRVZuS5c
 https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
 http://www.codinglabs.net/article_world_view_projection_matrix.aspx
+
+27/06/2022
+https://stackoverflow.com/questions/159590/way-to-go-from-recursion-to-iteration
+
+10/04/2023
+https://www.youtube.com/watch?v=Qz0KTGYJtUk

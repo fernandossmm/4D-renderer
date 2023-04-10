@@ -1,9 +1,12 @@
 
 /code
 /build
+/out
 
 /application.windows32
 /application.windows64
 
 shaders*.autosave
 *.zip
+
+.vscode

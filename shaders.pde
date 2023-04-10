@@ -42,6 +42,7 @@ class Vec4 {
 
 void setup() {
   size(640, 640, P2D);
+  frameRate(60);
   textSize(20);
   noStroke();
 
@@ -59,15 +60,18 @@ boolean errorPrinted = false;
 void draw() {
   processControls();
   
-  if( millis() % 100 == 0)
+  if( frameCount % 60 <= 1) {
     shader = loadShader("shader.frag");
-  
+  }
+
   shader.set("u_resolution", float(width), float(height));
   shader.set("u_mouse", float(mouseX), float(mouseY));
   shader.set("u_time", millis() / 1000.0);
   
   shader.set("camera_position", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z, camera.getPosition().w);
   shader.set("camera_rotation", camera.getRotation().x, camera.getRotation().y, camera.getRotation().z, camera.getRotation().w);
+  shader.set("camera_angles_one", camera.getAngles()[0], camera.getAngles()[1], camera.getAngles()[2]);
+  shader.set("camera_angles_two", camera.getAngles()[3], camera.getAngles()[4], camera.getAngles()[5]);
   
   try {
     shader(shader);
@@ -86,68 +90,44 @@ void draw() {
 }
 
 void keyPressed() {
-  if(key == CODED && keyCode == UP)
-    movementDelta.y += 1;
-  if(key == CODED && keyCode == DOWN)
-    movementDelta.y -= 1;
-  if(key == CODED && keyCode == RIGHT)
-    movementDelta.w += 1;
-  if(key == CODED && keyCode == LEFT)
-    movementDelta.w -= 1;
-  
-  if(Character.toLowerCase(key) == 'w')
-    movementDelta.z += 1;
-  if(Character.toLowerCase(key) == 's')
-    movementDelta.z -= 1;
-  if(Character.toLowerCase(key) == 'd')
-    movementDelta.x += 1;
-  if(Character.toLowerCase(key) == 'a')
-    movementDelta.x -= 1;
-    
-  if(Character.toLowerCase(key) == 'i') // Looking up
-    rotationDelta[4] += 1;
-  if(Character.toLowerCase(key) == 'k') // Looking down
-    rotationDelta[4] -= 1;
-  if(Character.toLowerCase(key) == 'j') // Looking left
-    rotationDelta[5] += 1;
-  if(Character.toLowerCase(key) == 'l') // Looking right
-    rotationDelta[5] -= 1;
-  // if(Character.toLowerCase(key) == 'u') // Looking 4th negative
-  //   camera.rotate(0.0, 0.0, 0.0, -ROTATION_SPEED);
-  // if(Character.toLowerCase(key) == 'o') // Looking 4th positive
-  //   camera.rotate(0.0, 0.0, 0.0, ROTATION_SPEED);
-    
-  if(Character.toLowerCase(key) == ' ') // Reset rotation
-    camera.resetRotation();
+  processKeystrokes(1);
 }
 
 void keyReleased() {
+  processKeystrokes(-1);
+}
+
+void processKeystrokes(int pressed) {
+
   if(key == CODED && keyCode == UP)
-    movementDelta.y -= 1;
+    movementDelta.y += pressed;
   if(key == CODED && keyCode == DOWN)
-    movementDelta.y += 1;
+    movementDelta.y -= pressed;
   if(key == CODED && keyCode == RIGHT)
-    movementDelta.w -= 1;
-  
+    movementDelta.w += pressed;
   if(key == CODED && keyCode == LEFT)
-    movementDelta.w += 1;
-  if(Character.toLowerCase(key) == 'w')
-    movementDelta.z -= 1;
-  if(Character.toLowerCase(key) == 's')
-    movementDelta.z += 1;
-  if(Character.toLowerCase(key) == 'd')
-    movementDelta.x -= 1;
-  if(Character.toLowerCase(key) == 'a')
-    movementDelta.x += 1;
+    movementDelta.w -= pressed;
   
+  if(Character.toLowerCase(key) == 'w')
+    movementDelta.z += pressed;
+  if(Character.toLowerCase(key) == 's')
+    movementDelta.z -= pressed;
+  if(Character.toLowerCase(key) == 'd')
+    movementDelta.x += pressed;
+  if(Character.toLowerCase(key) == 'a')
+    movementDelta.x -= pressed;
+    
   if(Character.toLowerCase(key) == 'i') // Looking up
-    rotationDelta[4] -= 1;
+    rotationDelta[4] += pressed;
   if(Character.toLowerCase(key) == 'k') // Looking down
-    rotationDelta[4] += 1;
-  if(Character.toLowerCase(key) == 'j') // Looking left
-    rotationDelta[5] -= 1;
-  if(Character.toLowerCase(key) == 'l') // Looking right
-    rotationDelta[5] += 1;
+    rotationDelta[4] -= pressed;
+  if(Character.toLowerCase(key) == 'l') // Looking left
+    rotationDelta[5] += pressed;
+  if(Character.toLowerCase(key) == 'j') // Looking right
+    rotationDelta[5] -= pressed;
+    
+  if(Character.toLowerCase(key) == ' ') // Reset rotation
+    camera.resetRotation();
 }
 
 void processControls() {
