@@ -8,6 +8,8 @@ Camera camera;
 Vec4 movementDelta = new Vec4(0,0,0,0);
 float[] rotationDelta = new float[6];
 
+float smoothedFrameRate = 0;
+
 class Vec4 {
   public float x, y, z, w;
   
@@ -86,7 +88,9 @@ void draw() {
   }
   rect(0,0,width,height);
   resetShader();
-  text((int) frameRate, 5, 25);
+  smoothedFrameRate = 1.1/2 * frameRate + 0.9/2 * smoothedFrameRate;
+
+  text((int) smoothedFrameRate, 5, 25);
 }
 
 void keyPressed() {
@@ -127,7 +131,7 @@ void processKeystrokes(int pressed) {
     rotationDelta[5] -= pressed;
     
   if(Character.toLowerCase(key) == ' ') // Reset rotation
-    camera.resetRotation();
+    camera.reset();
 }
 
 void processControls() {

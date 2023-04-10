@@ -77,96 +77,113 @@ struct Shape
   vec4 c;   // center
   vec4 len; // cube lengths
   float[6] rotation;
+
+  bool hidden;
   
   int operand1;
   int operand2;
 };
 
-Shape shapeFactory(in int type, in vec4 color, in vec4 c, in float r, in vec4 len, float[6] rotation, in int operand1, in int operand2) {
+Shape createShape(in int type, in vec4 color, in vec4 center, in float radius, in vec4 len, float[6] rotation, in bool hidden, in int operand1, in int operand2) {
   Shape ret;
   ret.type = type;
   ret.color = color;
-  ret.r = r;  // ball radius
-  ret.c = c;  // center
+  ret.r = radius;  // ball radius
+  ret.c = center;  // center
   ret.len = len;  // cube lengths
   ret.rotation = rotation;
+  ret.hidden = hidden;
   ret.operand1 = operand1;
   ret.operand2 = operand2;
   return ret;
 }
 
-Shape ballFactory(in vec4 color, in vec4 c, in float r) {
-  return shapeFactory(BALL, color, c, r, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), 0, 0);
+Shape createBall(in vec4 color, in vec4 center, in float radius, in bool hidden) {
+  return createShape(BALL, color, center, radius, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), hidden, 0, 0);
 }
 
-Shape parallelotopeFactory(in vec4 color, in vec4 c, in vec4 len, float[6] rotation) {
-  return shapeFactory(PARALLELOTOPE, color, c, 0.0, len, rotation, 0, 0);
+Shape createParallelotope(in vec4 color, in vec4 c, in vec4 len, float[6] rotation, in bool hidden) {
+  return createShape(PARALLELOTOPE, color, c, 0.0, len, rotation, hidden, 0, 0);
 }
 
-Shape shapes[8];
+Shape createIntersection(in int operand1, in int operand2, in bool hidden) {
+  return createShape(INTERSECTION, vec4(0.0), vec4(0.0), 0.0, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), hidden, operand1, operand2);
+}
+
+Shape shapes[6];
 
 void loadShapes() {
-  shapes[0] = ballFactory(vec4(1.0,0.0,0.0,0.0), vec4(-10.0,0.0,0.0,0.0), 1.0);
-  shapes[1] = ballFactory(vec4(0.0,1.0,0.0,0.0), vec4(-10.0,1.0,0.0,-0.3), 1.0);
-  shapes[2] = ballFactory(vec4(0.0,0.0,1.0,0.0), vec4(1.0,-2.0,0.0,-2.2), 2.0);
+  shapes[0] = createBall(vec4(1.0,0.0,0.0,0.0), vec4(-1.0,0.0,3.0,0.0), 1.0, true);
+  shapes[1] = createBall(vec4(0.0,1.0,0.0,0.0), vec4(-1.0,1.0,3.0,-0.3), 1.0, true);
+  shapes[2] = createBall(vec4(0.0,0.0,1.0,0.0), vec4(1.0,-2.0,0.0,-2.2), 2.0, false);
   
-  shapes[3] = ballFactory(vec4(0.1,1.0,0.4,0.0), vec4(0.0,0.0,0.0,0.0), 1.0);
+  shapes[3] = createBall(vec4(0.1,1.0,0.4,0.0), vec4(0.0,0.0,0.0,0.0), 1.0, false);
   
-  shapes[4] = parallelotopeFactory(vec4(1.0,0.0,1.0,0.0), vec4(3.0,0.0,0.0,0.0), vec4(1.0,2.0,1.0,1.0),
-                float[](0.0,0.0,0.0,0.0,1.0,0.0));
+  shapes[4] = createParallelotope(vec4(1.0,0.0,1.0,0.0), vec4(3.0,0.0,0.0,0.0), vec4(1.0,2.0,1.0,1.0),
+                float[](0.0,0.0,0.0,0.0,1.0,0.0), false);
+  
+  
+  shapes[5] = createIntersection(0,1, false);
 }
 
 float distanceFromShape(in vec4 position, in int shapeIndex) {
   // Proposal to solve this: While loop and a limited-length stack (maybe 128?) - Really non-performant
-  /* Depth-first traversal
-      -  
-  */
-  int[4] callStack;
-  float[8] returnMap;
+  int callStack[32] = int[32](0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  float returnMap[8] = float[8](0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0);
   int stackIndex = 0;
   int currentShapeIndex = shapeIndex;
   
-  callStack[stackIndex] = shapeIndex;
+  callStack[stackIndex] = currentShapeIndex;
   stackIndex++;
   
   while(stackIndex > 0) {
     stackIndex--;
     currentShapeIndex = callStack[stackIndex];
     Shape shape = shapes[currentShapeIndex];
+
+    if(returnMap[currentShapeIndex] == 0.0) {   // if the current shape is not already calculated
     
-    switch(shape.type) {
-      case BALL:
-        return length(position) - shape.r;
-        
-      case PARALLELOTOPE:
-        vec4 positionAfterRot = rotate(position - shape.c,
-          shape.rotation[0], shape.rotation[1], shape.rotation[2], shape.rotation[3], shape.rotation[4], shape.rotation[5]);
+      switch(shape.type) {
+        case BALL:
+          returnMap[currentShapeIndex] = length(position - shape.c) - shape.r;
+          break;
           
-        vec4 q = abs(positionAfterRot) - shape.len;
+        case PARALLELOTOPE:
+          vec4 positionAfterRot = rotate(position - shape.c,
+            shape.rotation[0], shape.rotation[1], shape.rotation[2], shape.rotation[3], shape.rotation[4], shape.rotation[5]);
+            
+          vec4 q = abs(positionAfterRot) - shape.len;
+          
+          float dist = length(max(q, 0.0));
+          
+          float m = min(maxcomp4(q),0.0);
+          
+          returnMap[currentShapeIndex] = length(max(dist,0.0)) + m;
+          break;
         
-        float dist = length(max(q, 0.0));
-        
-        float m = min(maxcomp4(q),0.0);
-        
-        return length(max(dist,0.0)) + m;
-      
-      // case INTERSECTION:
-      //   // TODO: GLSL does not support recursion, wtf
-      //   // return max(distanceFromShape(position, shapes[shape.operand1]), distanceFromShape(position, shapes[shape.operand2]));
-      //   if(returnMap[currentShapeIndex] == 0.0) {
-      //     callStack[stackIndex] = shapeIndex;
-      //     stackIndex++;
-      //     callStack[stackIndex] = shape.operand1;
-      //     stackIndex++;
-      //     callStack[stackIndex] = shape.operand2;
-      //     stackIndex++;
-      //   }
-      //   else {
-      //     returnMap[currentShapeIndex] = max(returnMap[shape.operand1], returnMap[shape.operand2]);
-      //   }
-      //   break;
-      // case UNION:
-      // case DIFFERENCE:
+        case INTERSECTION:
+          // TODO: GLSL does not support recursion, wtf
+          // return max(distanceFromShape(position, shapes[shape.operand1]), distanceFromShape(position, shapes[shape.operand2]));
+            if(returnMap[shape.operand1] == 0.0 && returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = currentShapeIndex;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = shape.operand2;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand1] == 0.0) {
+              callStack[stackIndex] = shape.operand1;
+              stackIndex++;
+            }
+          
+          
+          returnMap[currentShapeIndex] = max(returnMap[shape.operand1], returnMap[shape.operand2]);
+          
+          break;
+        // case UNION:
+        // case DIFFERENCE:
+      }
     }
   }
   
@@ -200,7 +217,8 @@ float map_the_world(in vec4 p)
   float minDist = 1.0 / 0.0; // Infinity
   
   for(int i = 0; i<shapes.length(); i++) {
-    minDist = min(minDist, distanceFromShape(p, i));
+    if(!shapes[i].hidden)
+      minDist = min(minDist, distanceFromShape(p, i));
   }
   
   return minDist;
@@ -246,6 +264,7 @@ vec3 ray_march(in vec4 ro, in vec4 rd)
 
           float diffuse_intensity = max(0.0, dot(normal, direction_to_light));
 
+          // wildly innefficient, needs refactor
           return closest_color(current_position).xyz * diffuse_intensity;
         }
 
@@ -270,7 +289,6 @@ void main()
 
     vec4 ray = vec4(0.0, 0.0, 1.0, 0.0);
     
-    // TODO: actually rotate rays in the correct way depending on camera rotation
     vec4 rayDirection = rotate(ray, 0.0, 0.0, 0.0, uv.y, uv.x, 0.0);
     rayDirection = rotate(rayDirection, camera_angles_one[0], camera_angles_one[1], camera_angles_one[2], camera_angles_two[0], camera_angles_two[1], camera_angles_two[2]);
     

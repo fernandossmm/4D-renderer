@@ -22,7 +22,8 @@ public class Camera {
     this(new Vec4(x, y, z, w));
   }
   
-  void resetRotation() {
+  void reset() {
+    position = new Vec4(0.0, 0.0, -5.0, 0.0);
     rotation = new Vec4(0.0, 0.0, 1.0, 0.0);
     angles = new float[6];
   }
@@ -38,7 +39,7 @@ public class Camera {
     this.angles[3] += yzRot;
     this.angles[4] += xzRot;
     this.angles[5] += xyRot;
-
+    // TODO make rotation relative to camera, same as movement
     this.rotation = rotateVector(rotation, zwRot, ywRot, xwRot, yzRot, xzRot, xyRot);
   }
   
@@ -108,10 +109,10 @@ public class Camera {
       case "-z":
         movement = new Vec4(0.0, 0.0, -step, 0.0); break;
       case "w":
-        position.w += step; break;  // Absolute movement (not related to orientation) in 4th dimension.
+        position.w += step; return;  // Absolute movement (not related to orientation) in 4th dimension.
                                     // Anything else is way too difficult to control.
       case "-w":
-        position.w -= step; break;
+        position.w -= step; return;
     }
 
     position = position.add(rotateVector(movement, this.angles[0], this.angles[1], this.angles[2], this.angles[3], this.angles[4], this.angles[5]));
