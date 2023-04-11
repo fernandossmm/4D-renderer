@@ -106,8 +106,8 @@ Shape createParallelotope(in vec4 color, in vec4 c, in vec4 len, float[6] rotati
   return createShape(PARALLELOTOPE, color, c, 0.0, len, rotation, hidden, 0, 0);
 }
 
-Shape createIntersection(in int operand1, in int operand2, in bool hidden) {
-  return createShape(INTERSECTION, vec4(0.0), vec4(0.0), 0.0, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), hidden, operand1, operand2);
+Shape createOperation(in int operation, in int operand1, in int operand2, in bool hidden) {
+  return createShape(operation, vec4(0.0), vec4(0.0), 0.0, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), hidden, operand1, operand2);
 }
 
 Shape shapes[6];
@@ -123,7 +123,7 @@ void loadShapes() {
                 float[](0.0,0.0,0.0,0.0,1.0,0.0), false);
   
   
-  shapes[5] = createIntersection(0,1, false);
+  shapes[5] = createOperation(DIFFERENCE, 0,1, false);
 }
 
 float distanceFromShape(in vec4 position, in int shapeIndex) {
@@ -162,8 +162,6 @@ float distanceFromShape(in vec4 position, in int shapeIndex) {
           break;
         
         case INTERSECTION:
-          // TODO: GLSL does not support recursion, wtf
-          // return max(distanceFromShape(position, shapes[shape.operand1]), distanceFromShape(position, shapes[shape.operand2]));
             if(returnMap[shape.operand1] == 0.0 && returnMap[shape.operand2] == 0.0) {
               callStack[stackIndex] = currentShapeIndex;
               stackIndex++;
@@ -177,12 +175,42 @@ float distanceFromShape(in vec4 position, in int shapeIndex) {
               stackIndex++;
             }
           
-          
           returnMap[currentShapeIndex] = max(returnMap[shape.operand1], returnMap[shape.operand2]);
-          
           break;
-        // case UNION:
-        // case DIFFERENCE:
+
+        case UNION:
+            if(returnMap[shape.operand1] == 0.0 && returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = currentShapeIndex;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = shape.operand2;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand1] == 0.0) {
+              callStack[stackIndex] = shape.operand1;
+              stackIndex++;
+            }
+          
+          returnMap[currentShapeIndex] = min(returnMap[shape.operand1], returnMap[shape.operand2]);
+          break;
+          
+        case DIFFERENCE:
+          if(returnMap[shape.operand1] == 0.0 && returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = currentShapeIndex;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand2] == 0.0) {
+              callStack[stackIndex] = shape.operand2;
+              stackIndex++;
+            }
+            if(returnMap[shape.operand1] == 0.0) {
+              callStack[stackIndex] = shape.operand1;
+              stackIndex++;
+            }
+          
+          returnMap[currentShapeIndex] = max(returnMap[shape.operand1], -returnMap[shape.operand2]);
+          break;
       }
     }
   }
