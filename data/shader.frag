@@ -110,20 +110,22 @@ Shape createOperation(in int operation, in int operand1, in int operand2, in boo
   return createShape(operation, vec4(0.0), vec4(0.0), 0.0, vec4(0.0), float[6](0.0,0.0,0.0,0.0,0.0,0.0), hidden, operand1, operand2);
 }
 
-Shape shapes[6];
+Shape shapes[7];
 
 void loadShapes() {
   shapes[0] = createBall(vec4(1.0,0.0,0.0,0.0), vec4(-1.0,0.0,3.0,0.0), 1.0, true);
   shapes[1] = createBall(vec4(0.0,1.0,0.0,0.0), vec4(-1.0,1.0,3.0,-0.3), 1.0, true);
   shapes[2] = createBall(vec4(0.0,0.0,1.0,0.0), vec4(1.0,-2.0,0.0,-2.2), 2.0, false);
   
-  shapes[3] = createBall(vec4(0.1,1.0,0.4,0.0), vec4(0.0,0.0,0.0,0.0), 1.0, false);
+  shapes[3] = createBall(vec4(0.1,1.0,0.4,0.0), vec4(1.7,0.0,0.0,0.0), 1.0, true);
   
   shapes[4] = createParallelotope(vec4(1.0,0.0,1.0,0.0), vec4(3.0,0.0,0.0,0.0), vec4(1.0,2.0,1.0,1.0),
-                float[](0.0,0.0,0.0,0.0,1.0,0.0), false);
+                float[](0.0,0.0,0.0,0.0,1.0,0.0), true);
   
   
   shapes[5] = createOperation(DIFFERENCE, 0,1, false);
+
+  shapes[6] = createOperation(DIFFERENCE, 4,3, false);
 }
 
 float distanceFromShape(in vec4 position, in int shapeIndex) {
