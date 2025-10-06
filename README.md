@@ -4,6 +4,7 @@
   <br>
 </h1>
 
+![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=flat&logo=openjdk&logoColor=white) ![OpenGL](https://img.shields.io/badge/OpenGL-%23FFFFFF.svg?style=flat&logo=opengl)
 
 <div align="center">
   <img height="400" alt="4D Renderer GIF" src="https://github.com/user-attachments/assets/8aa44009-68ad-4146-9367-292294271d29" />
