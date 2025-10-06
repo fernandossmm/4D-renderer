@@ -54,10 +54,6 @@ void setup() {
   camera = new Camera(0.0, 0.0, -5.0, 0.0);
 }
 
-float doubleTest(float n) {
-  return n*2;
-}
-
 boolean errorPrinted = false;
 void draw() {
   processControls();
